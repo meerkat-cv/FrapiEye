@@ -1,6 +1,6 @@
 # frAPI Eye
 
-This is an Android project that encodes the video from the cellphone cameras in h264 and transmits through websocket to our on premise [facial recognition API][frapi]. This enables our frAPI users to use the cellphone as a IP Camera while also geting the recognition and face detection results presented directly on the phone.
+This is an Android project that encodes the video from the cell phone cameras in h264 and transmits through websocket to our on premise [facial recognition API][frapi]. This enables our frAPI users to use the cellphone as a IP Camera while also geting the recognition and face detection results presented directly on the phone.
 
 For the video encode we used from [android-h264-stream-demo][demo_site], which is quite small and simple to use. And for the websocket connection we used [nv-websocket-client][websocket], which seems quite robust and very simple to set up.
 
