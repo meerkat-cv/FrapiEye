@@ -21,6 +21,9 @@ import android.widget.Button;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
+import org.java_websocket.WebSocketImpl;
+import org.java_websocket.drafts.Draft_17;
+
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -144,7 +147,7 @@ public class CameraPreviewSurface extends SurfaceView implements SurfaceHolder.C
 
     public class CameraDetectorCaller implements Camera.PreviewCallback{
         public static final String TAG = "CameraDetectorCaller";
-        private FrapiWebsocket stream_;
+        private VideoServer stream_;
         AvcEncoder encoder;
         private double fps;
         private long lastTime;
@@ -211,8 +214,13 @@ public class CameraPreviewSurface extends SurfaceView implements SurfaceHolder.C
         }
 
         public CameraDetectorCaller() {
-            stream_ = new FrapiWebsocket("ws://192.168.25.4:4444/stream", "CelCam", "3a162f906e46bdda81cd7651caf9fd66");
-            stream_.execute();
+            try {
+                WebSocketImpl.DEBUG = false;
+                stream_ = new VideoServer(4446);
+                stream_.start();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
 
         public void setSize(int W, int H) {
