@@ -15,6 +15,7 @@ public class VideoServer extends WebSocketServer {
     private static int counter = 0;
     private String camType_ = "";
     public boolean readyToSend_ = false;
+    public String lastResult_ = "";
     WebSocket ws_ = null;
 
     public VideoServer( int port ) throws UnknownHostException {
@@ -52,6 +53,7 @@ public class VideoServer extends WebSocketServer {
 
     @Override
     public void onMessage( WebSocket conn, String message ) {
+        lastResult_ = message;
         readyToSend_ = true;
     }
 

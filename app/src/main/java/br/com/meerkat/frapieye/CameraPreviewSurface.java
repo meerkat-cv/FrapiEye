@@ -1,41 +1,28 @@
 package br.com.meerkat.frapieye;
 
 import android.content.Context;
-import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.ImageFormat;
 import android.graphics.Matrix;
-import android.graphics.PixelFormat;
-import android.graphics.Point;
 import android.graphics.Rect;
 import android.hardware.Camera;
 import android.os.Build;
-import android.os.Environment;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.content.res.Configuration;
 import android.view.View;
-import android.widget.Button;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import org.java_websocket.WebSocketImpl;
-import org.java_websocket.drafts.Draft_17;
 
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.net.DatagramSocket;
-import java.net.InetAddress;
-import java.net.SocketException;
-import java.net.UnknownHostException;
 import java.util.ArrayList;
-import java.util.List;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 
 public class CameraPreviewSurface extends SurfaceView implements SurfaceHolder.Callback{
@@ -149,6 +136,7 @@ public class CameraPreviewSurface extends SurfaceView implements SurfaceHolder.C
         public static final String TAG = "CameraDetectorCaller";
         private VideoServer stream_;
         AvcEncoder encoder;
+        Rect lastFace_ = new Rect(0,0,0,0);
         private double fps;
         private long lastTime;
         private int spoofResult = 0;
@@ -250,6 +238,36 @@ public class CameraPreviewSurface extends SurfaceView implements SurfaceHolder.C
             lastTime = System.nanoTime();
             if (overlay != null) {
                 overlay.setFPS(fps);
+                if (stream_.lastResult_.length() > 0) {
+                    try {
+                        final JSONObject obj = new JSONObject(stream_.lastResult_);
+                        overlay.setRectangle(new Rect(0,0,0,0));
+                        final JSONArray faces;
+                        if(obj.has("ok") == false) {
+                            if (obj.has("people")) {
+                                faces = obj.getJSONArray("people");
+                            } else {
+                                faces = obj.getJSONArray("faces");
+                            }
+
+                            if (faces.length() == 0 && obj.has("ok") == false)
+                                lastFace_ = new Rect(0, 0, 0, 0);
+
+                            for (int i = 0; i < faces.length(); ++i) {
+                                final JSONObject curr_face = faces.getJSONObject(i);
+                                Rect face = getBBox(curr_face);
+                                lastFace_ = face;
+                                overlay.setRectangle(face);
+                            }
+                        } else {
+                            overlay.setRectangle(lastFace_);
+                        }
+                    } catch (Exception e) {
+                        overlay.setRectangle(new Rect(0,0,0,0));
+                        e.printStackTrace();
+                    }
+                }
+
             }
 
             if (this.isStreaming) {
@@ -264,6 +282,23 @@ public class CameraPreviewSurface extends SurfaceView implements SurfaceHolder.C
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
+            }
+        }
+
+        Rect getBBox(JSONObject obj) {
+            try {
+                JSONObject br = obj.getJSONObject("bottom_right");
+                JSONObject tl = obj.getJSONObject("top_left");
+
+                int b = br.getInt("y");
+                int r = br.getInt("x");
+                int t = tl.getInt("y");
+                int l = tl.getInt("x");
+
+                return new Rect(l,t,r,b);
+            } catch (Exception e) {
+                e.printStackTrace();
+                return new Rect(0,0,0,0);
             }
         }
 
