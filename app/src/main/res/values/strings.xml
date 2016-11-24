@@ -2,4 +2,13 @@
     <string name="app_name">frAPI Eye</string>
     <string name="app_name_version">Meerkat frAPI Eye v0.1</string>
     <string name="txtCredits">Meerkat is a company specialized in Computer Vision. Take a look at <a href="http://www.meerkat.com.br/en/">our website</a>.</string>
+
+    <string name="action_settings">Settings</string>
+    <string name="hint_name">Camera Label</string>
+    <string name="hint_ip">frAPI Ip</string>
+    <string name="hint_port">frAPI Port</string>
+    <string name="btn_sign_up">Sign Up</string>
+    <string name="err_msg_name">Enter this camera label</string>
+    <string name="err_msg_ip">Enter the frAPI ip address</string>
+    <string name="err_msg_port">Enter the frAPI port (default 4444)</string>
 </resources>
