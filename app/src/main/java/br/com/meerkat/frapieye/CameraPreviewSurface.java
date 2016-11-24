@@ -20,6 +20,7 @@ import org.java_websocket.WebSocketImpl;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.List;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -50,6 +51,7 @@ public class CameraPreviewSurface extends SurfaceView implements SurfaceHolder.C
             mCamera.release();
         }
     }
+
 
     public void linkOverlay(SurfaceOverlay _overlay) {
         overlay = _overlay;
@@ -135,6 +137,7 @@ public class CameraPreviewSurface extends SurfaceView implements SurfaceHolder.C
     public class CameraDetectorCaller implements Camera.PreviewCallback{
         public static final String TAG = "CameraDetectorCaller";
         private VideoServer stream_;
+        String frapiIP_, frapiPort_;
         AvcEncoder encoder;
         Rect lastFace_ = new Rect(0,0,0,0);
         private double fps;
@@ -174,6 +177,7 @@ public class CameraPreviewSurface extends SurfaceView implements SurfaceHolder.C
                 }
             }
         };
+
 
         public void startStream(CameraType camType)
         {
@@ -241,29 +245,25 @@ public class CameraPreviewSurface extends SurfaceView implements SurfaceHolder.C
                 if (stream_.lastResult_.length() > 0) {
                     try {
                         final JSONObject obj = new JSONObject(stream_.lastResult_);
-                        overlay.setRectangle(new Rect(0,0,0,0));
                         final JSONArray faces;
+                        List<Rect> faces_list;
+                        List<String> labels_list = new ArrayList<>();
+                        List<Float> conf_list = new ArrayList<>();
+
                         if(obj.has("ok") == false) {
                             if (obj.has("people")) {
                                 faces = obj.getJSONArray("people");
+                                faces_list  = getFacesFromJSON(faces);
+                                labels_list = getLabelsFromJSON(faces, conf_list);
                             } else {
                                 faces = obj.getJSONArray("faces");
+                                faces_list = getFacesFromJSON(faces);
                             }
 
-                            if (faces.length() == 0 && obj.has("ok") == false)
-                                lastFace_ = new Rect(0, 0, 0, 0);
-
-                            for (int i = 0; i < faces.length(); ++i) {
-                                final JSONObject curr_face = faces.getJSONObject(i);
-                                Rect face = getBBox(curr_face);
-                                lastFace_ = face;
-                                overlay.setRectangle(face);
-                            }
-                        } else {
-                            overlay.setRectangle(lastFace_);
+                            overlay.setRectangles(faces_list, labels_list, conf_list);
                         }
                     } catch (Exception e) {
-                        overlay.setRectangle(new Rect(0,0,0,0));
+                        overlay.setRectangles(new ArrayList<Rect>(), new ArrayList<String>(), new ArrayList<Float>());
                         e.printStackTrace();
                     }
                 }
@@ -283,6 +283,41 @@ public class CameraPreviewSurface extends SurfaceView implements SurfaceHolder.C
                     e.printStackTrace();
                 }
             }
+        }
+
+
+        List<String> getLabelsFromJSON(JSONArray facesArray, List<Float> confList) {
+            List<String> labels = new ArrayList<>();
+
+            for (int i=0; i<facesArray.length(); i++) {
+                try {
+                    JSONObject obj = facesArray.getJSONObject(i);
+
+                    JSONObject recog = obj.getJSONObject("recognition");
+                    String label = recog.getString("predictedLabel");
+                    float conf = (float)recog.getDouble("confidence");
+                    labels.add(label);
+                    confList.add(conf);
+
+                } catch (Exception e) { }
+            }
+
+            return labels;
+        }
+
+
+        List<Rect> getFacesFromJSON(JSONArray facesArray) {
+            List<Rect> faces = new ArrayList<Rect>();
+
+            for (int i=0; i<facesArray.length(); i++) {
+                try {
+                    JSONObject f = facesArray.getJSONObject(i);
+                    Rect face = getBBox(f);
+                    faces.add(face);
+                } catch (Exception e) { }
+            }
+
+            return faces;
         }
 
         Rect getBBox(JSONObject obj) {

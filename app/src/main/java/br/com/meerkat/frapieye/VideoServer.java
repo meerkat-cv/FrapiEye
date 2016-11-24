@@ -68,13 +68,18 @@ public class VideoServer extends WebSocketServer {
         if(ws_ == null || ws_.isClosed())
             return;
 
-        ws_.send(data);
+        try {
+            ws_.send(data);
+        } catch (Exception e) { }
     }
 
     public void ChangeCamera(String msg) {
         camType_ = msg;
 
-        if(ws_ != null && ws_.isClosed() == false)
-            ws_.send(camType_);
+        if(ws_ != null && ws_.isClosed() == false) {
+            try {
+                ws_.send(camType_);
+            } catch (Exception e) { }
+        }
     }
 }

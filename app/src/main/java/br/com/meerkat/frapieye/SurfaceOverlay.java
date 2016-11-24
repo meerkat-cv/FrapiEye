@@ -22,6 +22,7 @@ import android.view.animation.AlphaAnimation;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import static java.util.Arrays.fill;
@@ -30,8 +31,10 @@ import static java.util.Arrays.fill;
 public class SurfaceOverlay extends SurfaceView implements SurfaceHolder.Callback{
     private static final String TAG = "SurfaceOverlay";
     private int spoofResult;
-    private Rect detection;
-    private List<Point> landmarks;
+    private List<Rect> detections = new ArrayList<>();
+    private List<String> labels = new ArrayList<>();
+    private List<Float> confs = new ArrayList<>();
+    private List<Point> landmarks = new ArrayList<>();
     private float[] blinks = new float[40];
     private float[] blinks2 = new float[40];
     private int curr_blink = 0;
@@ -158,26 +161,6 @@ public class SurfaceOverlay extends SurfaceView implements SurfaceHolder.Callbac
 
                 canvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
 
-                Paint paint_spoof = new Paint();
-
-                if (spoofResult == 0) { // Analyzing face...
-                    paint_spoof.setColor(Color.argb(240, 255, 255, 255));
-                }
-                if (spoofResult == 1) { // Valid face!
-                    paint_spoof.setColor(Color.argb(240, 108, 198, 100));
-                }
-                if (spoofResult == 2) { // Invalid face!
-                    paint_spoof.setColor(Color.argb(240, 255, 90, 79));
-                }
-                if (spoofResult == 3) { // Camera shake
-                    paint_spoof.setColor(Color.argb(240, 255, 165, 91));
-                }
-                if (spoofResult == 4) { // Face too far...
-                    paint_spoof.setColor(Color.argb(240, 90, 108, 188));
-                }
-                paint_spoof.setStrokeWidth((int) (30 * scale));
-                canvas.drawLine(canvas.getWidth(), canvas.getHeight(), 0, canvas.getHeight(), paint_spoof);
-
                 Paint paint = new Paint();
 
                 paint.setColor(Color.WHITE);
@@ -188,35 +171,35 @@ public class SurfaceOverlay extends SurfaceView implements SurfaceHolder.Callbac
                 canvas.drawText("FPS:" + String.format("%.2f", getFPS()), (int) (30 * scale), (int) (40 * scale), paint);
 
                 paint.setColor(Color.GREEN);
-                paint.setStrokeWidth(8);
+                paint.setStrokeWidth(6);
 
                 paint.setStyle(Paint.Style.STROKE);
-                paint.setPathEffect(new DashPathEffect(new float[]{10, 20}, 0));
 
-                if (detection != null) {
-                    canvas.drawRect(detection, paint);
-                }
+                for (int i=0; i<detections.size(); i++) {
+                    if (detections.get(i).height() > 30) {
+                        Rect det = detections.get(i);
+                        String text = labels.get(i);
+                        int conf = Math.round(confs.get(i));
+                        int maxLength = (text.length() < 12)?text.length():12;
+                        text = text.substring(0, maxLength) + " - "+String.valueOf(conf);
 
-                //                for(int i=0; i<landmarks.size(); i=i++)
-                //                    canvas.drawPoint(landmarks.get(i).x, landmarks.get(i).y, paint_spoof);
+                        canvas.drawRect(det, paint);
+                        float text_scale = det.width() / 80.0f;
+                        paint.setTextSize(8 * text_scale);
 
-                // Draw landmarks mask
-                if (landmarks != null) {
-                    Paint paint_pt = new Paint();
-                    paint_pt.setStyle(Paint.Style.FILL);
-                    paint_pt.setColor(Color.rgb(255, 255, 255));
-                    paint_pt.setStrokeWidth(10);
+                        paint.setColor(Color.BLACK);
+                        paint.setStrokeWidth(1.3f * text_scale);
+                        Rect bounds = new Rect(0, 0, 0, 0);
+                        paint.getTextBounds(text, 0, text.length(), bounds);
+                        canvas.drawText(text, det.left, det.bottom + bounds.height() * 1.3f, paint);
 
-                    for (int i = 0; i < landmarks.size(); i++) {
-                        Point land = landmarks.get(i);
-                        canvas.drawCircle(land.x, land.y, 4, paint_pt);
+                        paint.setColor(Color.GREEN);
+                        paint.setStrokeWidth(0.8f * text_scale);
+                        canvas.drawText(text, det.left, det.bottom + bounds.height() * 1.3f, paint);
+
                     }
-
                 }
-
-
             }
-
         }
     }
 
@@ -240,10 +223,25 @@ public class SurfaceOverlay extends SurfaceView implements SurfaceHolder.Callbac
 
     }
 
-    public void setRectangle(Rect det) {
-        this.detection = det;
-        if (scale != 1.0)
-            detection.set((int)(detection.left*scale), (int)(detection.top*scale), (int)(detection.right*scale), (int)(detection.bottom*scale));
+    public void setRectangles(List<Rect> dets, List<String> labels, List<Float> confidences) {
+        this.detections.clear();
+        this.labels.clear();
+        this.confs.clear();
+
+        for(Rect det : dets) {
+            if (scale != 1.0)
+                det.set((int)(det.left*scale), (int)(det.top*scale), (int)(det.right*scale), (int)(det.bottom*scale));
+
+            this.detections.add(det);
+        }
+
+        for(String l: labels) {
+            this.labels.add(l);
+        }
+
+        for(float f:confidences) {
+            this.confs.add(f);
+        }
     }
 
     public void setPoints(List<Point> pts) {
