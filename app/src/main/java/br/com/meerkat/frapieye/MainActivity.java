@@ -2,6 +2,8 @@ package br.com.meerkat.frapieye;
 
 import android.app.DownloadManager;
 import android.content.Context;
+import android.content.res.Configuration;
+import android.graphics.Typeface;
 import android.net.wifi.WifiManager;
 import android.os.AsyncTask;
 import android.support.v7.app.AppCompatActivity;
@@ -64,27 +66,29 @@ import java.util.List;
 
 
 public class MainActivity extends AppCompatActivity {
-    private CameraPreviewSurface preview = null;
-    private SurfaceOverlay overlay;
+    private static CameraPreviewSurface preview = null;
+    private static SurfaceOverlay overlay;
+    private static boolean created = false;
 
     private static final int REQUEST_CAMERA_RESULT = 1;
     private static final int REQUEST_WRITE_EXTERNAL_STORAGE = 112;
     private static final String TAG = "MainActivity";
 
-    private RelativeLayout aboutLayout;
-    private RelativeLayout inputLayout;
-    private FrameLayout pnlFlash;
+    private static RelativeLayout aboutLayout;
+    private static RelativeLayout inputLayout;
+    private static FrameLayout pnlFlash;
 
 
 
-    private Toolbar toolbar;
-    private EditText inputName, inputIp, inputPort;
-    private TextInputLayout inputLayoutName, inputLayoutEmail, inputLayoutPassword;
-    private Button btnSignUp;
+    private static Toolbar toolbar;
+    private static EditText inputName, inputIp, inputPort;
+    private static TextInputLayout inputLayoutName, inputLayoutEmail, inputLayoutPassword;
+    private static Button btnSignUp;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
 
         boolean hasWritePermission = false;
         boolean hasCameraPermission = false;
@@ -148,6 +152,9 @@ public class MainActivity extends AppCompatActivity {
 
         ImageView resultImageView = (ImageView) findViewById(R.id.resultFace);
         overlay.setResultImageView(resultImageView);
+
+        Typeface tf = Typeface.createFromAsset(getAssets(),"fonts/SourceSansPro-Regular.ttf");
+        overlay.setFont(tf);
 
         RelativeLayout splashScreen = (RelativeLayout) findViewById(R.id.splashScreen);
         preview.setSplashScreen(splashScreen);
@@ -246,6 +253,7 @@ public class MainActivity extends AppCompatActivity {
         Log.i(TAG, "Loading finished");
     }
 
+
     private class PostAsyncTask extends AsyncTask<String, Void, Void> {
         private boolean success = false;
 
@@ -308,6 +316,18 @@ public class MainActivity extends AppCompatActivity {
                 Toast.makeText(getBaseContext(), "Request sent to frAPI! Transmition should start soon.", Toast.LENGTH_LONG).show();
             else
                 Toast.makeText(getBaseContext(), "Failed to send request to frAPI! Please, check your frAPI configurations and network connectivity.", Toast.LENGTH_LONG).show();
+        }
+    }
+
+    @Override
+    public void onConfigurationChanged(Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+
+        // Checks the orientation of the screen
+        if (newConfig.orientation == Configuration.ORIENTATION_LANDSCAPE) {
+            Toast.makeText(this, "landscape", Toast.LENGTH_SHORT).show();
+        } else if (newConfig.orientation == Configuration.ORIENTATION_PORTRAIT){
+            Toast.makeText(this, "portrait", Toast.LENGTH_SHORT).show();
         }
     }
 

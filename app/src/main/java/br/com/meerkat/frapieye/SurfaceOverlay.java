@@ -11,6 +11,7 @@ import android.graphics.PixelFormat;
 import android.graphics.Point;
 import android.graphics.PorterDuff;
 import android.graphics.Rect;
+import android.graphics.Typeface;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.util.AttributeSet;
@@ -30,6 +31,7 @@ import static java.util.Arrays.fill;
 
 public class SurfaceOverlay extends SurfaceView implements SurfaceHolder.Callback{
     private static final String TAG = "SurfaceOverlay";
+    private Typeface font;
     private int spoofResult;
     private List<Rect> detections = new ArrayList<>();
     private List<String> labels = new ArrayList<>();
@@ -69,6 +71,8 @@ public class SurfaceOverlay extends SurfaceView implements SurfaceHolder.Callbac
     public void setScale(double scale) {
         this.scale = scale;
     }
+
+    public void setFont(Typeface font) { this.font = font; }
 
     public void setSpoofResult(int spoofResult) {
         if (this.spoofResult == 0 && spoofResult == 1) {
@@ -158,10 +162,11 @@ public class SurfaceOverlay extends SurfaceView implements SurfaceHolder.Callbac
 
         private void doDraw(Canvas canvas) {
             if (canvas != null) {
-
                 canvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
 
                 Paint paint = new Paint();
+                paint.setAntiAlias(true);
+                paint.setTypeface(font);
 
                 paint.setColor(Color.WHITE);
                 paint.setTextAlign(Paint.Align.LEFT);
@@ -170,32 +175,60 @@ public class SurfaceOverlay extends SurfaceView implements SurfaceHolder.Callbac
                 paint.setTextSize((int) (20 * scale));
                 canvas.drawText("FPS:" + String.format("%.2f", getFPS()), (int) (30 * scale), (int) (40 * scale), paint);
 
-                paint.setColor(Color.GREEN);
-                paint.setStrokeWidth(6);
-
-                paint.setStyle(Paint.Style.STROKE);
-
                 for (int i=0; i<detections.size(); i++) {
                     if (detections.get(i).height() > 30) {
+                        paint.setColor(Color.argb(255, 73, 142, 255));
+                        paint.setStrokeWidth(6);
+                        paint.setStyle(Paint.Style.STROKE);
+
                         Rect det = detections.get(i);
                         String text = labels.get(i);
                         int conf = Math.round(confs.get(i));
-                        int maxLength = (text.length() < 12)?text.length():12;
-                        text = text.substring(0, maxLength) + " - "+String.valueOf(conf);
+                        int maxLength = (text.length() < 9)?text.length():9;
+                        text = text.substring(0, maxLength) + " ("+String.valueOf(conf)+"%)";
 
+                        // Drawing a skinner detection bounding box
+                        paint.setStrokeWidth(3);
                         canvas.drawRect(det, paint);
-                        float text_scale = det.width() / 80.0f;
-                        paint.setTextSize(8 * text_scale);
 
-                        paint.setColor(Color.BLACK);
-                        paint.setStrokeWidth(1.3f * text_scale);
+                        // Drawing thicker detection lines
+                        paint.setStrokeWidth(12);
+                        canvas.drawLine(det.left, det.top, det.left+(det.right-det.left)/3.0f, det.top, paint);
+                        canvas.drawLine(det.left+((det.right-det.left)/3.0f)*2, det.top, det.right, det.top, paint);
+
+                        canvas.drawLine(det.left, det.bottom, det.left+(det.right-det.left)/3.0f, det.bottom, paint);
+                        canvas.drawLine(det.left+((det.right-det.left)/3.0f)*2, det.bottom, det.right, det.bottom, paint);
+
+                        canvas.drawLine(det.left, det.top, det.left, det.top+(det.bottom-det.top)/3.0f, paint);
+                        canvas.drawLine(det.left, det.top+2*((det.bottom-det.top)/3.0f), det.left, det.bottom, paint);
+
+                        canvas.drawLine(det.right, det.top, det.right, det.top+(det.bottom-det.top)/3.0f, paint);
+                        canvas.drawLine(det.right, det.top+2*((det.bottom-det.top)/3.0f), det.right, det.bottom, paint);
+
+                        // Making the corners rounded
+                        paint.setStyle(Paint.Style.FILL);
+                        canvas.drawCircle(det.left, det.top, 5, paint);
+                        canvas.drawCircle(det.right, det.top, 5, paint);
+                        canvas.drawCircle(det.right, det.bottom, 5, paint);
+                        canvas.drawCircle(det.left, det.bottom, 5, paint);
+
+                        paint.setStyle(Paint.Style.STROKE);
+                        float text_scale = det.width() / 80.0f;
+                        paint.setTextSize(10 * text_scale);
+
+                        // Distance within the detection and text with label/confidence
+                        float dy = (det.bottom-det.top+70)/12.0f;
+
                         Rect bounds = new Rect(0, 0, 0, 0);
                         paint.getTextBounds(text, 0, text.length(), bounds);
-                        canvas.drawText(text, det.left, det.bottom + bounds.height() * 1.3f, paint);
+                        // left, top, right, bottom, paint
+                        canvas.drawRect(det.left, dy+det.bottom, det.right, dy+det.bottom + bounds.height() * 1.7f, paint);//det.left+bounds.right+30, det.bottom + bounds.height() * 1.3f+10, paint);
+                        paint.setStyle(Paint.Style.FILL);
+                        canvas.drawRect(det.left, dy+det.bottom, det.right, dy+det.bottom + bounds.height() * 1.7f, paint);//det.left+bounds.right+30, det.bottom + bounds.height() * 1.3f+10, paint);
 
-                        paint.setColor(Color.GREEN);
-                        paint.setStrokeWidth(0.8f * text_scale);
-                        canvas.drawText(text, det.left, det.bottom + bounds.height() * 1.3f, paint);
+                        paint.setStrokeWidth(1.1f * text_scale);
+                        paint.setColor(Color.WHITE);
+                        canvas.drawText(text, det.left+10, dy+det.bottom + bounds.height() * 1.3f, paint);
 
                     }
                 }
