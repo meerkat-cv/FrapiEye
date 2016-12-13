@@ -283,7 +283,7 @@ public class MainActivity extends AppCompatActivity {
                 if(response.code() != 200)
                     success = false;
                 else {
-                    Log.e("WIFIIP", "FUCK: "+response.toString());
+                    Log.e("WIFIIP", "Response code != 200: "+response.toString());
                 }
 
                 if(success) {
@@ -300,7 +300,7 @@ public class MainActivity extends AppCompatActivity {
                 if(response.code() != 200)
                     success = false;
                 else {
-                    Log.e("WIFIIP", "FUCK2: "+response.toString());
+                    Log.e("WIFIIP", "Response code != 200: "+response.toString());
                 }
 
             } catch (Exception e) {

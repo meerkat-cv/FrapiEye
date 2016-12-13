@@ -26,6 +26,7 @@ public class VideoServer extends WebSocketServer {
     public void onOpen( WebSocket conn, ClientHandshake handshake ) {
         counter++;
         if (counter > 1) {
+            System.out.println( "///////////Opened connection number" + counter );
             conn.close();
             return;
         }
@@ -38,8 +39,8 @@ public class VideoServer extends WebSocketServer {
 
     @Override
     public void onClose( WebSocket conn, int code, String reason, boolean remote ) {
-        System.out.println( "Websocket closed" );
         counter--;
+        System.out.println( "Websocket closed" + counter );
 
         if(counter <= 0)
             readyToSend_ = false;
@@ -47,7 +48,6 @@ public class VideoServer extends WebSocketServer {
 
     @Override
     public void onError( WebSocket conn, Exception ex ) {
-        System.out.println( "Error:" );
         ex.printStackTrace();
     }
 
