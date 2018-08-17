@@ -387,14 +387,15 @@ public class MainActivity extends AppCompatActivity {
         String label = inputName.getText().toString().trim();
         String ip    = inputIp.getText().toString().trim();
         String port  = inputPort.getText().toString().trim();
-        String url   = "http://"+ip+":"+port+"/streamer/upsert";
+        String url   = "http://"+ip+":"+port+"/stream/upsert";
         String json  = "{" +
-                        "\"label\": \""+label+"\"," +
-                        "\"websocket_h264\": \"ws://"+my_ip+":4446\"," +
-                        "\"tempCoherence\": []" +
+                        "\"stream_label\": \""+label+"\"," +
+                        "\"stream_type\":  \"websocket_h264\"," +
+                        "\"path\":         \"ws://"+my_ip+":4446\"," +
+                        "\"algo_type\":    \"recognition\"" +
                         "}";
 
-        String url_get = "http://"+ip+":"+port+"/streamer/runall/"+label;
+        String url_get = "http://"+ip+":"+port+"/stream/run/"+label;
 
         new PostAsyncTask().execute(url, json, url_get);
 
